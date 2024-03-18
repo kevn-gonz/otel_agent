@@ -1,0 +1,148 @@
+# To limit exposure to denial of service attacks, change the host in endpoints below from 0.0.0.0 to a specific network interface.
+# See https://github.com/open-telemetry/opentelemetry-collector/blob/main/docs/security-best-practices.md#safeguards-against-denial-of-service-attacks
+
+receivers:
+  #otlp:
+  #  protocols:
+  #    grpc:
+  #      endpoint: 127.0.0.1:4317
+  #    http:
+
+  hostmetrics:
+    collection_interval: 30s
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+          system.cpu.time:
+            enabled: true
+          system.cpu.physical.count:
+            enabled: true
+          system.cpu.logical.count:
+            enabled: true
+          system.cpu.frequency:
+            enabled: true
+
+      memory:
+        metrics:
+          system.memory.usage:
+            enabled: true
+          system.memory.limit:
+            enabled: true
+          system.memory.utilization:
+            enabled: true
+
+      paging:
+        metrics:
+          system.paging.usage:
+            enabled: true
+          system.paging.utilization:
+            enabled: true
+          system.paging.operations:
+            enabled: true
+          system.paging.faults:
+            enabled: true
+
+      disk:
+        metrics:
+          system.disk.io:
+            enabled: true
+          system.disk.operations:
+            enabled: true
+          system.disk.io_time:
+            enabled: true
+          system.disk.operation_time:
+            enabled: true
+          system.disk.merged:
+            enabled: true
+          system.disk.weighted_io_time:
+            enabled: true
+          system.disk.pending_operations:
+            enabled: true
+
+      filesystem:
+        metrics:
+          system.filesystem.usage:
+            enabled: true
+          system.filesystem.inodes.usage:
+            enabled: true
+          system.filesystem.utilization:
+            enabled: true
+
+      network:
+        metrics:
+          system.network.dropped:
+            enabled: true
+          system.network.packets:
+            enabled: true
+          system.network.errors:
+            enabled: true
+          system.network.io:
+            enabled: true
+          system.network.connections:
+            enabled: true
+
+      processes:
+        metrics:
+          system.processes.count:
+            enabled: true
+          system.processes.created:
+            enabled: true
+
+      #load: #CPU LOAD 1-5-15 minutes
+
+processors:
+  #batch:
+
+  cumulativetodelta:
+
+  resource:
+    attributes:
+    - key: asset.tag
+      value: "123otelagent321"
+      action: upsert
+    - key: company.domain
+      value: "Operations"
+      action: upsert
+    - key: company.subdomain
+      value: "Event Management"
+      action: upsert
+
+  resourcedetection:
+    detectors: [system]
+    system:
+      resource_attributes:
+        host.name:
+          enabled: true
+        host.id:
+          enabled: true
+        os.type:
+          enabled: true
+
+exporters:
+  debug:
+  #logging:
+    verbosity: detailed
+
+  otlphttp:
+    endpoint: "https://<xxxx>.live.dynatrace.com/api/v2/otlp"
+    headers:
+      Authorization: "API-Token <xxxx>"
+
+service:
+  pipelines:
+    #traces:
+    #  receivers: [otlp]
+    #  processors: [batch]
+    #  exporters: [debug,otlphttp]
+
+    metrics:
+      receivers: [hostmetrics]
+      processors: [cumulativetodelta, resource, resourcedetection]
+      exporters: [debug, otlphttp]
+
+    #logs:
+    #  receivers: [otlp]
+    #  processors: [batch]
+    #  exporters: [debug,otlphttp]
